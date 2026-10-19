@@ -12,11 +12,11 @@
             [clojure.tools.build.api :as b]
             [deps-deploy.deps-deploy :as dd]))
 
-(def lib 'io.github.dspiteself/clj-xml-fo)
+(def lib 'io.github.dunnage/clj-xml-fo)
 (def version (format "0.1.%s" (b/git-count-revs nil)))
 (def class-dir "target/classes")
 (def jar-file (format "target/%s-%s.jar" (name lib) version))
-(def repo "https://github.com/dspiteself/clj-xml-fo")
+(def repo "https://github.com/dunnage/clj-xml-fo")
 
 (defn- basis []
   (b/create-basis {:project "deps.edn"}))
@@ -57,7 +57,7 @@
                   :src-dirs  ["src"]
                   :scm       {:url                 repo
                               :connection          (str "scm:git:" repo ".git")
-                              :developerConnection "scm:git:ssh://git@github.com/dspiteself/clj-xml-fo.git"
+                              :developerConnection "scm:git:ssh://git@github.com/dunnage/clj-xml-fo.git"
                               :tag                 (b/git-process {:git-args "rev-parse HEAD"})}
                   :pom-data  [[:description "XSL-FO as Clojure data: malli validation generated from Apache FOP's fop.xsd, encoded with sitoa straight into Apache FOP, with streaming."]
                               [:url repo]

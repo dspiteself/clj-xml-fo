@@ -33,15 +33,15 @@ clj-xml-fo is a deps.edn library. It isn't on Clojars yet (see
 [Releasing to Clojars](#releasing-to-clojars)), so add it as a git dependency:
 
 ```clojure
-{:deps {io.github.dspiteself/clj-xml-fo {:git/sha "a136cc49c69aa905bfad1ac970df34b45b96f5a6"}}}
+{:deps {io.github.dunnage/clj-xml-fo {:git/sha "d823272d2407dec1aaf60e65b7b89fd98b79d25f"}}}
 ```
 
-The `io.github.dspiteself/clj-xml-fo` name tells tools.deps to fetch
-https://github.com/dspiteself/clj-xml-fo.git. Pin the full sha of the commit
+The `io.github.dunnage/clj-xml-fo` name tells tools.deps to fetch
+https://github.com/dunnage/clj-xml-fo.git. Pin the full sha of the commit
 you want. This prints the latest one:
 
 ```bash
-git ls-remote https://github.com/dspiteself/clj-xml-fo.git refs/heads/main
+git ls-remote https://github.com/dunnage/clj-xml-fo.git refs/heads/main
 ```
 
 It brings in Apache FOP 2.11, malli and sitoa's `serde` and
@@ -296,9 +296,11 @@ its pom still names `bootstrapped-schema`.
 
 To release:
 
-1. Sign in to Clojars with GitHub, which verifies the `io.github.dspiteself`
-   group, and create a deploy token. To use a group you already have instead,
-   such as `net.clojars.dspiteself`, change `lib` in `build.clj`.
+1. Verify the `io.github.dunnage` group on Clojars, and create a deploy token.
+   `dunnage` is a GitHub organization, so an admin of the org creates an empty
+   public repository `dunnage/clojars-<clojars-username>`. They then claim the
+   group on https://clojars.org/verify/group. To publish under another group
+   you already own, change `lib` in `build.clj`.
 2. Commit, then run `clojure -X:test`.
 3. Run `CLOJARS_USERNAME=<username> CLOJARS_PASSWORD=<deploy token> clojure -T:build deploy`.
 4. Tag the release, for example `git tag v0.1.7 && git push origin v0.1.7`.
