@@ -44,6 +44,11 @@
               :exec-fn     clj-xml-fo.bootstrap/generate!
               :exec-args   {}}
 
+  ;; clojure -T:build jar | install | deploy   (see build.clj)
+  :build     {:deps       {io.github.clojure/tools.build {:git/tag "v0.10.14" :git/sha "9d08b2a"}
+                           slipset/deps-deploy           {:mvn/version "0.2.5"}}
+              :ns-default build}
+
   ;; clojure -X:test
   :test      {:extra-paths ["test" "test-resources"]
               :extra-deps  {io.github.cognitect-labs/test-runner {:git/tag "v0.5.1" :git/sha "dfb30dd"}

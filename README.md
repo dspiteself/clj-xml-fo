@@ -29,7 +29,8 @@ between. Content can stream.
 
 ## Installation
 
-clj-xml-fo is a deps.edn library. Add it as a git dependency:
+clj-xml-fo is a deps.edn library. It isn't on Clojars yet (see
+[Releasing to Clojars](#releasing-to-clojars)), so add it as a git dependency:
 
 ```clojure
 {:deps {io.github.dspiteself/clj-xml-fo {:git/sha "a136cc49c69aa905bfad1ac970df34b45b96f5a6"}}}
@@ -269,6 +270,40 @@ a validator. `clj-xml-fo.impl.validation` derives the validation registry from
 it at load time. That namespace's docstring lists each adjustment and why it's
 needed.
 
+## Releasing to Clojars
+
+`build.clj` builds and deploys a jar with tools.build and deps-deploy:
+
+```bash
+clojure -T:build jar       # target/clj-xml-fo-<version>.jar, with pom (MIT, SCM, description)
+clojure -T:build install   # into ~/.m2, to try the jar from another project
+clojure -T:build deploy    # to Clojars
+```
+
+The version is `0.1.<number of commits>`. The jar holds `src/` and
+`generated/`, plus `LICENSE` and `NOTICE` under `META-INF/clj-xml-fo/`. The
+bootstrap code, the XSD and the tests stay out.
+
+**Blocked until sitoa is on a Maven repository.** A pom can only name Maven
+artifacts, and tools.build leaves git dependencies out of it. Today clj-xml-fo
+reaches sitoa's `serde` (and through it `xml-primitives` and Breeze's
+`malli-java-time`) as a git dependency, and none of them is published.
+`clojure -T:build jar` warns about this. `clojure -T:build deploy` refuses
+until every direct dependency in `deps.edn` is a `:mvn/version` coordinate.
+After sitoa's modules and `malli-java-time` are released, point the `serde`
+entry in `deps.edn` at its Maven coordinate. Keep the `:exclusions` there if
+its pom still names `bootstrapped-schema`.
+
+To release:
+
+1. Sign in to Clojars with GitHub, which verifies the `io.github.dspiteself`
+   group, and create a deploy token. To use a group you already have instead,
+   such as `net.clojars.dspiteself`, change `lib` in `build.clj`.
+2. Commit, then run `clojure -X:test`.
+3. Run `CLOJARS_USERNAME=<username> CLOJARS_PASSWORD=<deploy token> clojure -T:build deploy`.
+4. Tag the release, for example `git tag v0.1.7 && git push origin v0.1.7`.
+   Use the version deploy printed.
+
 ## Tests
 
 ```bash
@@ -287,4 +322,4 @@ parser drops when reading, so its layout differs slightly.
 
 MIT; see [LICENSE](LICENSE). `bootstrap/clj_xml_fo/fop.xsd` and
 `test-resources/fop-examples/` come from Apache FOP and are under the Apache
-License 2.0.
+License 2.0. `generated/` is derived from that `fop.xsd`; see [NOTICE](NOTICE).
