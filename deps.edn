@@ -7,12 +7,15 @@
   ;; pinned at a consumer's top level is refused when clj-xml-fo.core loads
   ;; (clj-xml-fo.impl.malli-version).
   metosin/malli                          {:mvn/version "0.20.2"}
-  io.github.dunnage.sitoa/xml-primitives {:git/url   "https://github.com/dunnage/sitoa.git"
-                                          :git/sha   "1c1b844ca88696602e66dafdd2f8fa82cf3279b1"
-                                          :deps/root "xml-primitives"}
-  ;; serde names bootstrapped-schema as a dependency but none of its runtime
-  ;; namespaces require it. Excluding it keeps XSOM/JAXB off the runtime
-  ;; classpath; only the :bootstrap alias brings it back.
+  ;; serde brings xml-primitives (required directly by clj-xml-fo.core) as a
+  ;; :local/root inside its own checkout of the same sitoa sha. Do not also
+  ;; name xml-primitives here as a git dep: in a project that depends on
+  ;; clj-xml-fo both would be transitive, and tools.deps cannot choose between
+  ;; a local root and a git sha ("Unable to compare versions").
+  ;;
+  ;; serde also names bootstrapped-schema, but none of its runtime namespaces
+  ;; require it. Excluding it keeps XSOM/JAXB off the runtime classpath; only
+  ;; the :bootstrap alias brings it back.
   io.github.dunnage.sitoa/serde          {:git/url    "https://github.com/dunnage/sitoa.git"
                                           :git/sha    "1c1b844ca88696602e66dafdd2f8fa82cf3279b1"
                                           :deps/root  "serde"
@@ -30,7 +33,14 @@
               :extra-deps  {io.github.dunnage.sitoa/bootstrapped-schema
                             {:git/url   "https://github.com/dunnage/sitoa.git"
                              :git/sha   "1c1b844ca88696602e66dafdd2f8fa82cf3279b1"
-                             :deps/root "bootstrapped-schema"}}
+                             :deps/root "bootstrapped-schema"}
+                            ;; serde and bootstrapped-schema each bring their
+                            ;; own :local/root copy; naming it here picks one.
+                            ;; Aliases never reach consumers, so this is safe.
+                            io.github.dunnage.sitoa/xml-primitives
+                            {:git/url   "https://github.com/dunnage/sitoa.git"
+                             :git/sha   "1c1b844ca88696602e66dafdd2f8fa82cf3279b1"
+                             :deps/root "xml-primitives"}}
               :exec-fn     clj-xml-fo.bootstrap/generate!
               :exec-args   {}}
 
