@@ -29,10 +29,18 @@ between. Content can stream.
 
 ## Installation
 
-This is a deps.edn library. Use it as a git or `:local/root` dependency:
+clj-xml-fo is a deps.edn library. Add it as a git dependency:
 
 ```clojure
-{:deps {clj-xml-fo/clj-xml-fo {:local/root "../clj-xml-fo"}}}
+{:deps {io.github.dspiteself/clj-xml-fo {:git/sha "a136cc49c69aa905bfad1ac970df34b45b96f5a6"}}}
+```
+
+The `io.github.dspiteself/clj-xml-fo` name tells tools.deps to fetch
+https://github.com/dspiteself/clj-xml-fo.git. Pin the full sha of the commit
+you want. This prints the latest one:
+
+```bash
+git ls-remote https://github.com/dspiteself/clj-xml-fo.git refs/heads/main
 ```
 
 It brings in Apache FOP 2.11, malli and sitoa's `serde` and
@@ -48,6 +56,14 @@ pinned at the top level of your own deps.edn always wins, however old, so
 `clj-xml-fo.core` refuses to load with an older malli jar and names the version
 it found. When malli comes from a git or local dependency, or from inside an
 uberjar, there is no jar version to read, and the check is skipped.
+
+You may get "Unable to compare versions for
+io.github.dunnage.sitoa/xml-primitives". That happens when another library in
+your tree names a sitoa module as a git dep. sitoa's own modules refer to each
+other with `:local/root`, and tools.deps can't compare a local root with a git
+sha. To fix it, declare `io.github.dunnage.sitoa/xml-primitives` at the top
+level of your deps.edn, because top-level declarations always win. Depending
+on sitoa's `serde` directly needs no extra step.
 
 ## The data
 
@@ -225,3 +241,9 @@ seven of them it also checks that FOP lays the data out exactly as it lays out
 the original file, comparing FOP area trees word for word and position for
 position. The eighth, `list.fo`, has whitespace-only inlines, which sitoa's
 parser drops when reading, so its layout differs slightly.
+
+## License
+
+MIT; see [LICENSE](LICENSE). `bootstrap/clj_xml_fo/fop.xsd` and
+`test-resources/fop-examples/` come from Apache FOP and are under the Apache
+License 2.0.
