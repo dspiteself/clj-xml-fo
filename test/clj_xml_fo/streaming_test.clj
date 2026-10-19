@@ -4,7 +4,7 @@
             [clojure.string :as str]
             [clojure.test :refer [deftest is testing]])
   (:import (clojure.lang ExceptionInfo IReduceInit)
-           (java.io ByteArrayOutputStream)
+           (java.io ByteArrayOutputStream OutputStream)
            (org.xml.sax.helpers DefaultHandler)))
 
 (defn- block [i] [:block {:xml/value [(str "item " i)]}])
@@ -52,6 +52,32 @@
         items (eduction (map (fn [i] (swap! log conj :produced) (block i))) (range 4))]
     (fo/encode! (doc items) handler)
     (is (= (take 8 (cycle [:produced :emitted])) @log))))
+
+(defn- counting-output-stream
+  "An OutputStream that discards bytes and counts them in the atom n."
+  [n]
+  (proxy [OutputStream] []
+    (write
+      ([b] (if (bytes? b) (swap! n + (alength ^bytes b)) (swap! n inc)))
+      ([_bs _off len] (swap! n + len)))))
+
+(deftest xml-bytes-leave-before-the-stream-ends
+  ;; ~1 MB of XML: far more than the serializer buffers, so if output streams,
+  ;; almost all of it must be out by the time the last item is produced.
+  (let [n 40000
+        written (atom 0)
+        written-when-produced (long-array n)
+        items (eduction (map (fn [i]
+                               (aset written-when-produced i (long @written))
+                               (block i)))
+                        (range n))]
+    (fo/write-xml! (doc items) (counting-output-stream written) {:validate? true})
+    (let [total @written]
+      (is (< 1000000 total))
+      (is (pos? (aget written-when-produced (quot n 10)))
+          "XML was written while 90% of the stream was still to come")
+      (is (< (* 0.9 total) (aget written-when-produced (dec n)))
+          "over 90% of the XML was written before the last item existed"))))
 
 (deftest a-stream-is-reduced-once
   (let [d (doc (once (mapv block (range 3))))]

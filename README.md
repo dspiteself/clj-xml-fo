@@ -207,6 +207,47 @@ produced. Streams nested among vector items are spliced in, as in hiccup.
   still grows inside FOP. Split long output over several page-sequences, which
   can themselves be a stream.
 
+### Streaming XML output
+
+`write-xml!` streams as well. Each item becomes SAX events right away, and the
+JDK serializer writes them to your `Writer` or `OutputStream` with only a small
+buffer. The XML goes out while the input is still being produced. The test
+suite checks this: over 90% of a streamed document's bytes must be written
+before its last item exists.
+
+One measured run, on one machine, put 10,000,000 `[:block ...]` items in a
+flow as an `eduction`, with `{:validate? true}` and `-Xmx256m`. It wrote 499 MB
+of XML in 56 s. Output kept pace with input the whole way: 249 MB were already
+written when item 5,000,000 was produced. Twice the heap size in XML got
+through, so nothing accumulates.
+
+To serve generated FO over HTTP as it is produced, hand `write-xml!` the
+response stream. With Ring, for example:
+
+```clojure
+{:status  200
+ :headers {"Content-Type" "application/xml"}
+ :body    (ring.util.io/piped-input-stream #(fo/write-xml! doc %))}
+```
+
+`xml-string` returns one String, so it cannot stream.
+
+## Memory and startup
+
+The schema costs a fixed amount of memory, paid once per JVM, whatever the
+document size. These are figures retained after GC, measured on JDK 25:
+
+| Stage | Retained heap, cumulative |
+|---|---|
+| Clojure, malli and sitoa serde | 12 MB |
+| `require` of `clj-xml-fo.core`, mostly the generated schema (about 1.6 s) | 33 MB |
+| First encode or render: sitoa's unparser for every schema type | 186 MB |
+| First validation: malli validators | 202 MB |
+
+So any encode needs a heap of at least about **192 MB**, or **208 MB** with
+`:validate? true`. With less, the JVM runs out of memory while the schema is
+compiled, before anything is written. Rendering adds whatever FOP needs on top.
+
 ## Regenerating the schema
 
 `generated/` is the output of sitoa's bootstrap and is committed. To rebuild it
