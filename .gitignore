@@ -1,0 +1,33 @@
+# Clojure CLI / tools.deps
+.cpcache/
+
+# Build output
+target/
+classes/
+*.jar
+pom.xml.asc
+
+# REPL state
+.nrepl-port
+.nrepl-history
+.rebel_readline_history
+.socket-repl-port
+.portal/
+
+# Editor and tooling caches (.clj-kondo/config.edn and imports stay tracked)
+.clj-kondo/.cache/
+.lsp/.cache/
+.calva/output-window/
+.calva/repl.calva-repl
+.idea/
+*.iml
+.vscode/
+*.swp
+*~
+.DS_Store
+
+# Documents rendered while trying the library out, e.g. (fo/render! doc "hello.pdf")
+/*.pdf
+/*.png
+
+# generated/ is NOT ignored: it is the committed output of `clojure -X:bootstrap`.

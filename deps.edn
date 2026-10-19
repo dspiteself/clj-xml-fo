@@ -1,0 +1,42 @@
+{:paths ["src" "generated"]
+ :deps
+ {org.clojure/clojure                    {:mvn/version "1.12.6"}
+  ;; The minimum, for performance: 0.20.1 compiles recursive validators and
+  ;; 0.20.2 fixes a startup-time regression. tools.deps takes the newest
+  ;; version any dependency asks for, so newer malli is welcome; an older one
+  ;; pinned at a consumer's top level is refused when clj-xml-fo.core loads
+  ;; (clj-xml-fo.impl.malli-version).
+  metosin/malli                          {:mvn/version "0.20.2"}
+  io.github.dunnage.sitoa/xml-primitives {:git/url   "https://github.com/dunnage/sitoa.git"
+                                          :git/sha   "1c1b844ca88696602e66dafdd2f8fa82cf3279b1"
+                                          :deps/root "xml-primitives"}
+  ;; serde names bootstrapped-schema as a dependency but none of its runtime
+  ;; namespaces require it. Excluding it keeps XSOM/JAXB off the runtime
+  ;; classpath; only the :bootstrap alias brings it back.
+  io.github.dunnage.sitoa/serde          {:git/url    "https://github.com/dunnage/sitoa.git"
+                                          :git/sha    "1c1b844ca88696602e66dafdd2f8fa82cf3279b1"
+                                          :deps/root  "serde"
+                                          :exclusions [io.github.dunnage.sitoa/bootstrapped-schema]}
+  ;; dunnage.sitoa.unparser imports IndentingXMLStreamWriter from txw2, which
+  ;; otherwise only arrives through jaxb-runtime via bootstrapped-schema.
+  org.glassfish.jaxb/txw2                {:mvn/version "4.0.5"}
+  org.apache.xmlgraphics/fop-core        {:mvn/version "2.11"}}
+
+ :aliases
+ {;; Regenerates generated/ from bootstrap/clj_xml_fo/fop.xsd:
+  ;;   clojure -X:bootstrap
+  ;; The bootstrap/ path and sitoa's XSD tooling exist only under this alias.
+  :bootstrap {:extra-paths ["bootstrap"]
+              :extra-deps  {io.github.dunnage.sitoa/bootstrapped-schema
+                            {:git/url   "https://github.com/dunnage/sitoa.git"
+                             :git/sha   "1c1b844ca88696602e66dafdd2f8fa82cf3279b1"
+                             :deps/root "bootstrapped-schema"}}
+              :exec-fn     clj-xml-fo.bootstrap/generate!
+              :exec-args   {}}
+
+  ;; clojure -X:test
+  :test      {:extra-paths ["test" "test-resources"]
+              :extra-deps  {io.github.cognitect-labs/test-runner {:git/tag "v0.5.1" :git/sha "dfb30dd"}
+                            org.slf4j/slf4j-nop                  {:mvn/version "1.7.36"}}
+              :main-opts   ["-m" "cognitect.test-runner"]
+              :exec-fn     cognitect.test-runner.api/test}}}
