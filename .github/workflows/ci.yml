@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: tests (JDK ${{ matrix.java }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ['21', '25']
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+      - uses: DeLaGuardo/setup-clojure@13.7.0
+        with:
+          cli: 1.12.2.1565
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.gitlibs
+            ~/.deps.clj
+          key: deps-${{ runner.os }}-test-${{ hashFiles('deps.edn') }}
+          restore-keys: deps-${{ runner.os }}-test-
+      - name: Run tests
+        run: clojure -X:test
+
+  build:
+    name: generated schema and jar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: DeLaGuardo/setup-clojure@13.7.0
+        with:
+          cli: 1.12.2.1565
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.gitlibs
+            ~/.deps.clj
+          key: deps-${{ runner.os }}-build-${{ hashFiles('deps.edn') }}
+          restore-keys: deps-${{ runner.os }}-build-
+      - name: generated/ matches what the bootstrap produces from fop.xsd
+        run: |
+          clojure -X:bootstrap
+          if [ -n "$(git status --porcelain -- generated)" ]; then
+            git status --short -- generated | head -20
+            echo "::error::generated/ is out of date: run clojure -X:bootstrap and commit the result"
+            exit 1
+          fi
+      - name: Build the jar and pom
+        run: clojure -T:build jar
