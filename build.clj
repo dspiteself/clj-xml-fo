@@ -6,14 +6,15 @@
     clojure -T:build deploy    the jar to Clojars
 
   deploy reads CLOJARS_USERNAME and CLOJARS_PASSWORD (a Clojars deploy token)
-  from the environment. The version is 0.1.<number of commits>, so commit
-  before releasing and tag the commit v<version> afterwards."
+  from the environment and refuses to run with uncommitted changes, since the
+  pom records HEAD. Bump version below for each release and tag the commit
+  v<version> afterwards."
   (:require [clojure.string :as str]
             [clojure.tools.build.api :as b]
             [deps-deploy.deps-deploy :as dd]))
 
 (def lib 'io.github.dunnage/clj-xml-fo)
-(def version (format "0.1.%s" (b/git-count-revs nil)))
+(def version "0.1.0")
 (def class-dir "target/classes")
 (def jar-file (format "target/%s-%s.jar" (name lib) version))
 (def repo "https://github.com/dunnage/clj-xml-fo")
@@ -90,6 +91,9 @@
   "Deploy the jar to Clojars. Refuses while any dependency is not a Maven
   artifact, since the published pom could not bring it in."
   [opts]
+  (let [dirty (b/git-process {:git-args "status --porcelain"})]
+    (when-not (str/blank? dirty)
+      (throw (ex-info "Refusing to deploy with uncommitted changes; the pom records HEAD." {:status dirty}))))
   (warn-or-refuse! (basis) true)
   (jar opts)
   (dd/deploy {:installer :remote

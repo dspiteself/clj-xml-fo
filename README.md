@@ -29,19 +29,17 @@ between. Content can stream.
 
 ## Installation
 
-clj-xml-fo is a deps.edn library. It isn't on Clojars yet (see
-[Releasing to Clojars](#releasing-to-clojars)), so add it as a git dependency:
+clj-xml-fo is a deps.edn library, released to Clojars as
+`io.github.dunnage/clj-xml-fo`:
 
 ```clojure
-{:deps {io.github.dunnage/clj-xml-fo {:git/sha "d823272d2407dec1aaf60e65b7b89fd98b79d25f"}}}
+{:deps {io.github.dunnage/clj-xml-fo {:mvn/version "0.1.0"}}}
 ```
 
-The `io.github.dunnage/clj-xml-fo` name tells tools.deps to fetch
-https://github.com/dunnage/clj-xml-fo.git. Pin the full sha of the commit
-you want. This prints the latest one:
+It also works as a git dependency, from https://github.com/dunnage/clj-xml-fo:
 
-```bash
-git ls-remote https://github.com/dunnage/clj-xml-fo.git refs/heads/main
+```clojure
+{:deps {io.github.dunnage/clj-xml-fo {:git/sha "<full sha of a commit on main>"}}}
 ```
 
 It brings in Apache FOP 2.11, malli and sitoa's `serde` and
@@ -58,13 +56,13 @@ pinned at the top level of your own deps.edn always wins, however old, so
 it found. When malli comes from a git or local dependency, or from inside an
 uberjar, there is no jar version to read, and the check is skipped.
 
-You may get "Unable to compare versions for
-io.github.dunnage.sitoa/xml-primitives". That happens when another library in
-your tree names a sitoa module as a git dep. sitoa's own modules refer to each
-other with `:local/root`, and tools.deps can't compare a local root with a git
-sha. To fix it, declare `io.github.dunnage.sitoa/xml-primitives` at the top
-level of your deps.edn, because top-level declarations always win. Depending
-on sitoa's `serde` directly needs no extra step.
+sitoa comes from Clojars too, as `io.github.dunnage.sitoa/serde` and
+`io.github.dunnage.sitoa/xml-primitives`. These are the same names its git
+coordinates use. If another dependency brings sitoa in as a git dep, tools.deps
+can't compare that with a Maven version ("Unable to compare versions"). Declare
+`io.github.dunnage.sitoa/serde` and `io.github.dunnage.sitoa/xml-primitives` at
+the top level of your deps.edn, with whichever coordinate you want. Top-level
+declarations always win.
 
 ## The data
 
@@ -272,7 +270,7 @@ needed.
 
 ## Releasing to Clojars
 
-`build.clj` builds and deploys a jar with tools.build and deps-deploy:
+`build.clj` builds and deploys the jar with tools.build and deps-deploy:
 
 ```bash
 clojure -T:build jar       # target/clj-xml-fo-<version>.jar, with pom (MIT, SCM, description)
@@ -280,31 +278,28 @@ clojure -T:build install   # into ~/.m2, to try the jar from another project
 clojure -T:build deploy    # to Clojars
 ```
 
-The version is `0.1.<number of commits>`. The jar holds `src/` and
-`generated/`, plus `LICENSE` and `NOTICE` under `META-INF/clj-xml-fo/`. The
-bootstrap code, the XSD and the tests stay out.
+The jar holds `src/` and `generated/`, plus `LICENSE` and `NOTICE` under
+`META-INF/clj-xml-fo/`. The bootstrap code, the XSD and the tests stay out.
+`deploy` refuses to run while the working tree has uncommitted changes, or
+while any direct dependency is not a Maven artifact, since a pom can't name
+one.
 
-**Blocked until sitoa is on a Maven repository.** A pom can only name Maven
-artifacts, and tools.build leaves git dependencies out of it. Today clj-xml-fo
-reaches sitoa's `serde` (and through it `xml-primitives` and Breeze's
-`malli-java-time`) as a git dependency, and none of them is published.
-`clojure -T:build jar` warns about this. `clojure -T:build deploy` refuses
-until every direct dependency in `deps.edn` is a `:mvn/version` coordinate.
-After sitoa's modules and `malli-java-time` are released, point the `serde`
-entry in `deps.edn` at its Maven coordinate. Keep the `:exclusions` there if
-its pom still names `bootstrapped-schema`.
+clj-xml-fo depends on sitoa's Clojars release, so release sitoa first, from
+https://github.com/dunnage/sitoa (its `build.clj` releases its modules in
+order). Then:
 
-To release:
-
-1. Verify the `io.github.dunnage` group on Clojars, and create a deploy token.
-   `dunnage` is a GitHub organization, so an admin of the org creates an empty
-   public repository `dunnage/clojars-<clojars-username>`. They then claim the
-   group on https://clojars.org/verify/group. To publish under another group
-   you already own, change `lib` in `build.clj`.
+1. Set `version` in `build.clj`, and update the version in Installation above.
+   If the sitoa version changed, update it in `deps.edn` too.
 2. Commit, then run `clojure -X:test`.
 3. Run `CLOJARS_USERNAME=<username> CLOJARS_PASSWORD=<deploy token> clojure -T:build deploy`.
-4. Tag the release, for example `git tag v0.1.7 && git push origin v0.1.7`.
-   Use the version deploy printed.
+   Your Clojars account needs the `io.github.dunnage` group, verified through
+   the `dunnage` GitHub organization.
+4. Tag the release, for example `git tag v0.1.0 && git push origin v0.1.0`.
+
+Steps 3 and 4 can also be done by GitHub Actions. Pushing a tag `v<version>`
+that matches `build.clj` runs `.github/workflows/release.yml`, which tests and
+deploys using the repository secrets `CLOJARS_USERNAME` and `CLOJARS_PASSWORD`
+(a Clojars deploy token). Either way, sitoa has to be released first.
 
 ## Tests
 
