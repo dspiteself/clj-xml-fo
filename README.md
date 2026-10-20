@@ -296,6 +296,11 @@ order). Then:
    the `dunnage` GitHub organization.
 4. Tag the release, for example `git tag v0.1.0 && git push origin v0.1.0`.
 
+Steps 3 and 4 can also be done by GitHub Actions. Pushing a tag `v<version>`
+that matches `build.clj` runs `.github/workflows/release.yml`, which tests and
+deploys using the repository secrets `CLOJARS_USERNAME` and `CLOJARS_PASSWORD`
+(a Clojars deploy token). Either way, sitoa has to be released first.
+
 ## Tests
 
 ```bash
