@@ -7,22 +7,11 @@
   ;; pinned at a consumer's top level is refused when clj-xml-fo.core loads
   ;; (clj-xml-fo.impl.malli-version).
   metosin/malli                          {:mvn/version "0.20.2"}
-  ;; serde brings xml-primitives (required directly by clj-xml-fo.core) as a
-  ;; :local/root inside its own checkout of the same sitoa sha. Do not also
-  ;; name xml-primitives here as a git dep: in a project that depends on
-  ;; clj-xml-fo both would be transitive, and tools.deps cannot choose between
-  ;; a local root and a git sha ("Unable to compare versions").
-  ;;
-  ;; serde also names bootstrapped-schema, but none of its runtime namespaces
-  ;; require it. Excluding it keeps XSOM/JAXB off the runtime classpath; only
-  ;; the :bootstrap alias brings it back.
-  io.github.dunnage.sitoa/serde          {:git/url    "https://github.com/dunnage/sitoa.git"
-                                          :git/sha    "1c1b844ca88696602e66dafdd2f8fa82cf3279b1"
-                                          :deps/root  "serde"
-                                          :exclusions [io.github.dunnage.sitoa/bootstrapped-schema]}
-  ;; dunnage.sitoa.unparser imports IndentingXMLStreamWriter from txw2, which
-  ;; otherwise only arrives through jaxb-runtime via bootstrapped-schema.
-  org.glassfish.jaxb/txw2                {:mvn/version "4.0.5"}
+  ;; sitoa from Clojars. serde's pom brings xml-primitives (required directly
+  ;; by clj-xml-fo.core) at the same version, and txw2 for its unparser; it no
+  ;; longer pulls in bootstrapped-schema, so XSOM/JAXB stay off the runtime
+  ;; classpath. Only the :bootstrap alias brings them in.
+  io.github.dunnage.sitoa/serde          {:mvn/version "0.1.0"}
   org.apache.xmlgraphics/fop-core        {:mvn/version "2.11"}}
 
  :aliases
@@ -30,17 +19,7 @@
   ;;   clojure -X:bootstrap
   ;; The bootstrap/ path and sitoa's XSD tooling exist only under this alias.
   :bootstrap {:extra-paths ["bootstrap"]
-              :extra-deps  {io.github.dunnage.sitoa/bootstrapped-schema
-                            {:git/url   "https://github.com/dunnage/sitoa.git"
-                             :git/sha   "1c1b844ca88696602e66dafdd2f8fa82cf3279b1"
-                             :deps/root "bootstrapped-schema"}
-                            ;; serde and bootstrapped-schema each bring their
-                            ;; own :local/root copy; naming it here picks one.
-                            ;; Aliases never reach consumers, so this is safe.
-                            io.github.dunnage.sitoa/xml-primitives
-                            {:git/url   "https://github.com/dunnage/sitoa.git"
-                             :git/sha   "1c1b844ca88696602e66dafdd2f8fa82cf3279b1"
-                             :deps/root "xml-primitives"}}
+              :extra-deps  {io.github.dunnage.sitoa/bootstrapped-schema {:mvn/version "0.1.0"}}
               :exec-fn     clj-xml-fo.bootstrap/generate!
               :exec-args   {}}
 
